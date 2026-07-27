@@ -1,5 +1,5 @@
 import json
-
+import re
 from pydantic import BaseModel, Field
 from typing_extensions import Literal
 
@@ -19,6 +19,7 @@ from ollama_deep_researcher.utils import (
     searxng_search,
     strip_thinking_tokens,
     get_config_value,
+    rank_search_results,
 )
 from ollama_deep_researcher.state import (
     SummaryState,
@@ -29,6 +30,7 @@ from ollama_deep_researcher.prompts import (
     query_writer_instructions,
     summarizer_instructions,
     reflection_instructions,
+    verifier_instructions,
     get_current_date,
     json_mode_query_instructions,
     tool_calling_query_instructions,
@@ -176,7 +178,9 @@ def generate_query(state: SummaryState, config: RunnableConfig):
                 else json_mode_query_instructions
             )
         ),
-        HumanMessage(content="Generate a query for web search:"),
+        HumanMessage(
+            content="Generate a query for web search:"
+        )
     ]
 
     return generate_search_query_with_structured_output(
@@ -214,7 +218,7 @@ def web_research(state: SummaryState, config: RunnableConfig):
         search_results = tavily_search(
             state.search_query,
             fetch_full_page=configurable.fetch_full_page,
-            max_results=1,
+            max_results=6,
         )
         search_str = deduplicate_and_format_sources(
             search_results,
@@ -256,12 +260,30 @@ def web_research(state: SummaryState, config: RunnableConfig):
         raise ValueError(f"Unsupported search API: {configurable.search_api}")
 
     return {
-        "sources_gathered": [format_sources(search_results)],
+        "latest_search_results": search_results["results"],
         "research_loop_count": state.research_loop_count + 1,
-        "web_research_results": [search_str],
     }
 
+def rank_sources(state: SummaryState, config: RunnableConfig):
+    """Rank retrieved sources before summarization."""
 
+    configurable = Configuration.from_runnable_config(config)
+
+    ranked_results = rank_search_results(
+        {"results": state.latest_search_results},
+        max_results=3,
+    )
+
+    ranked_context = deduplicate_and_format_sources(
+        ranked_results,
+        max_tokens_per_source=MAX_TOKENS_PER_SOURCE,
+        fetch_full_page=configurable.fetch_full_page,
+    )
+
+    return {
+        "sources_gathered": [format_sources(ranked_results)],
+        "web_research_results": [ranked_context],
+    }
 def summarize_sources(state: SummaryState, config: RunnableConfig):
     """LangGraph node that summarizes web research results.
 
@@ -382,63 +404,95 @@ def reflect_on_summary(state: SummaryState, config: RunnableConfig):
         tool_query_field="follow_up_query",
         json_query_field="follow_up_query",
     )
-
-
-def finalize_summary(state: SummaryState):
-    """LangGraph node that finalizes the research summary.
-
-    Prepares the final output by deduplicating and formatting sources, then
-    combining them with the running summary to create a well-structured
-    research report with proper citations.
-
-    Args:
-        state: Current graph state containing the running summary and sources gathered
-
-    Returns:
-        Dictionary with state update, including running_summary key containing the formatted final summary with sources
-    """
-
-    # Deduplicate sources before joining
-    seen_sources = set()
-    unique_sources = []
-
-    for source in state.sources_gathered:
-        # Split the source into lines and process each individually
-        for line in source.split("\n"):
-            # Only process non-empty lines
-            if line.strip() and line not in seen_sources:
-                seen_sources.add(line)
-                unique_sources.append(line)
-
-    # Join the deduplicated sources
-    all_sources = "\n".join(unique_sources)
-    state.running_summary = (
-        f"## Summary\n{state.running_summary}\n\n ### Sources:\n{all_sources}"
-    )
-    return {"running_summary": state.running_summary}
-
-
-def route_research(
-    state: SummaryState, config: RunnableConfig
-) -> Literal["finalize_summary", "web_research"]:
-    """LangGraph routing function that determines the next step in the research flow.
-
-    Controls the research loop by deciding whether to continue gathering information
-    or to finalize the summary based on the configured maximum number of research loops.
-
-    Args:
-        state: Current graph state containing the research loop count
-        config: Configuration for the runnable, including max_web_research_loops setting
-
-    Returns:
-        String literal indicating the next node to visit ("web_research" or "finalize_summary")
-    """
+def verify_summary(state: SummaryState, config: RunnableConfig):
+    """Verify the summary against retrieved source evidence."""
 
     configurable = Configuration.from_runnable_config(config)
-    if state.research_loop_count <= configurable.max_web_research_loops:
-        return "web_research"
+    evidence = "\n\n".join(state.web_research_results)
+
+    if configurable.llm_provider == "lmstudio":
+        llm = ChatLMStudio(
+            base_url=configurable.lmstudio_base_url,
+            model=configurable.local_llm,
+            temperature=0,
+        )
     else:
-        return "finalize_summary"
+        llm = ChatOllama(
+            base_url=configurable.ollama_base_url,
+            model=configurable.local_llm,
+            temperature=0,
+            reasoning=False,
+            num_predict=1600,
+        )
+
+    result = llm.invoke([
+        SystemMessage(content=verifier_instructions),
+        HumanMessage(
+            content=(
+                f"<USER_TOPIC>\n"
+                f"{state.research_topic}\n"
+                f"</USER_TOPIC>\n\n"
+                f"<DRAFT>\n"
+                f"{state.running_summary}\n"
+                f"</DRAFT>\n\n"
+                f"<EVIDENCE>\n"
+                f"{evidence}\n"
+                f"</EVIDENCE>"
+            )
+        ),
+    ])
+
+    verified_summary = result.content
+
+    if configurable.strip_thinking_tokens:
+        verified_summary = strip_thinking_tokens(verified_summary)
+
+    return {"running_summary": verified_summary}
+
+def finalize_summary(state: SummaryState):
+    cited_ids = list(dict.fromkeys(
+        re.findall(r"\[(S[0-9A-F]{8})\]", state.running_summary)
+    ))
+
+    sources_by_id = {}
+
+    for source_group in state.sources_gathered:
+        for line in source_group.splitlines():
+            line = line.strip()
+            match = re.match(r"\* \[(S[0-9A-F]{8})\]", line)
+
+            if match:
+                source_id = match.group(1)
+                sources_by_id.setdefault(source_id, line)
+
+    final_sources = [
+        sources_by_id[source_id]
+        for source_id in cited_ids
+        if source_id in sources_by_id
+    ]
+
+    all_sources = "\n".join(final_sources)
+
+    final_report = (
+        f"## Summary\n{state.running_summary}"
+        f"\n\n### Sources:\n{all_sources}"
+    )
+
+    return {"running_summary": final_report}
+
+
+def route_after_summary(
+    state: SummaryState,
+    config: RunnableConfig,
+) -> Literal["reflect_on_summary", "verify_summary"]:
+    """Decide whether another research loop is required."""
+
+    configurable = Configuration.from_runnable_config(config)
+
+    if state.research_loop_count < configurable.max_web_research_loops:
+        return "reflect_on_summary"
+
+    return "verify_summary"
 
 
 # Add nodes and edges
@@ -450,16 +504,27 @@ builder = StateGraph(
 )
 builder.add_node("generate_query", generate_query)
 builder.add_node("web_research", web_research)
+builder.add_node("rank_sources", rank_sources)
 builder.add_node("summarize_sources", summarize_sources)
 builder.add_node("reflect_on_summary", reflect_on_summary)
 builder.add_node("finalize_summary", finalize_summary)
-
+builder.add_node("verify_summary", verify_summary)
 # Add edges
 builder.add_edge(START, "generate_query")
 builder.add_edge("generate_query", "web_research")
-builder.add_edge("web_research", "summarize_sources")
-builder.add_edge("summarize_sources", "reflect_on_summary")
-builder.add_conditional_edges("reflect_on_summary", route_research)
-builder.add_edge("finalize_summary", END)
+builder.add_edge("web_research", "rank_sources")
+builder.add_edge("rank_sources", "summarize_sources")
 
+builder.add_conditional_edges(
+    "summarize_sources",
+    route_after_summary,
+)
+
+builder.add_edge(
+    "reflect_on_summary",
+    "web_research",
+)
+
+builder.add_edge("verify_summary", "finalize_summary")
+builder.add_edge("finalize_summary", END)
 graph = builder.compile()

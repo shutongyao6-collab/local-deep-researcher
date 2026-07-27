@@ -1,0 +1,183 @@
+{
+  "aggregate": {
+    "total": 10,
+    "successful": 10,
+    "success_rate": 1.0,
+    "average_latency_seconds": 308.1,
+    "average_citation_validity": 1.0,
+    "average_source_utilization": 1.0,
+    "average_primary_source_ratio": 1.0
+  },
+  "results": [
+    {
+      "id": "langgraph_overview",
+      "question": "说明 LangGraph 在 AI Agent 开发中的核心作用，并给出三个不同的应用场景。",
+      "success": true,
+      "latency_seconds": 237.13,
+      "metrics": {
+        "citation_count": 5,
+        "malformed_citations": [],
+        "source_count": 5,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\nLangGraph 是一个用于构建、管理和部署长运行状态化代理的低层编排框架和运行时 [S04A206AC][S399CF636]。它旨在帮助用户设计能够可靠处理复杂任务的智能体，平衡控制与自主性 [S04A206AC][S399CF636]。通过提供细粒度控制和基础设施支持（如沙箱安全执行代码、部署扩展及可观测性），开发者可以在同一图中混合确定性手动编码步骤与 LLM 驱动的智能体步骤 [S04A206AC][S399CF636]。\n\n**场景一：构建特定工具型智能体**\n*   **问题：** 如何快速实现一个具备具体逻辑功能的计算类或工具型智能体？\n*   **LangGraph能力：** 支持使用 LangGraph Graph API 或 Functional API 来定义和开发智能体，提供低层控制以构建可靠代理 [S04A206AC][S399CF636]。\n*   **实际结果：** 开发者可以基于此框架演示并构建出如计算器这样的具体应用实例，实现特定逻辑功能 [S06E34FB7]。\n\n**场景二：处理复杂长运行任务与状态持久化**\n*   **问题：** 如何确保智能体在长时间运行中保持状态可靠且能应对中断或失败？\n*   **LangGraph能力：** 提供持久化层，通过 Checkpointers 实现短期记忆和 Stores 实现长期记忆 [S99E58642]。Checkpointers 支持人类介入工作流（Human-in-the-loop），允许检查、暂停并批准图步骤 [S4F78C9E4]。\n*   **实际结果：** 能够构建出可信赖的长运行状态智能体，使其在对话中断后能恢复执行或从故障中恢复，保持跨交互的信息记忆 [S99E58642][S04A206AC]。\n\n**场景三：实现定制化行为控制与生产部署**\n*   **问题：** 如何确保智能体的具体行为完全符合特定应用程序的业务需求并安全运行？\n*   **LangGraph能力：** 允许开发者进行细粒度编排，混合确定性步骤与 LLM 驱动的步骤 [S04A206AC][S399CF636]。支持在生产环境中通过沙箱（Sandboxes）安全运行代理生成的代码，并提供评估和可观测性工具以改进性能 [S04A206AC]。\n*   **实际结果：** 构建出定制化（bespoke）的智能体，使其能够按照应用要求精确运行并安全地扩展至生产环境 [S04A206AC][S399CF636]。\n\n ### Sources:\n* [S399CF636] [PRIMARY] LangGraph overview - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/overview\n* [S06E34FB7] [PRIMARY] Quickstart - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/quickstart\n* [S04A206AC] [PRIMARY] LangGraph: Agent Orchestration Framework for Reliable AI Agents : https://www.langchain.com/langgraph\n* [S4F78C9E4] [PRIMARY] Checkpointers - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/checkpointers\n* [S99E58642] [PRIMARY] Persistence - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/persistence"
+    },
+    {
+      "id": "langgraph_memory",
+      "question": "比较 LangGraph 中 Checkpointer 与 Store 的作用、作用域和典型使用场景。",
+      "success": true,
+      "latency_seconds": 255.24,
+      "metrics": {
+        "citation_count": 3,
+        "malformed_citations": [],
+        "source_count": 3,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\n### 场景一：核心功能与记忆机制对比\n**问题**: Checkpointers 和 Store 在 LangGraph 持久化层中的基本定义和功能定位是什么？\n**LangGraph 能力**: LangGraph 的持久化层通过 checkpointers 为代理提供短期记忆，并通过 stores 提供长期记忆 [S99E58642]。Checkpointers 将图状态保存为每一步的检查点（checkpoints），从而实现持久化、人机协作流程以及容错执行 [S4F78C9E4]。\n**实际结果**: Checkpointers 专注于通过保存每一步的图状态来管理短期记忆，而 Stores 则负责提供跨会话的长期记忆支持。\n\n### 场景二：数据持久化范围与适用性差异\n**问题**: 两者在数据存储的范围及对应的记忆类型上有哪些具体区别？\n**LangGraph 能力**: LangGraph 的持久化层区分了线程特定的跟踪和跨线程的持久存储功能，其中 Checkpointers 通过管理当前执行上下文来促进短期记忆的构建 [S99E58642]。Stores 提供跨越多个对话或线程的长期记忆支持。\n**实际结果**: Checkpointers 适用于管理当前线程的执行上下文和短期状态，而 Store 则用于存储跨越多个对话或线程的持久化信息。\n\n### 场景三：开发选型与典型应用场景建议\n**问题**: 在实际开发中应如何根据具体需求选择使用 Checkpointer 还是 Store？\n**LangGraph 能力**: Persistence（持久化）使 LangGraph 应用能够保留有用信息，其中 Stores 允许持久存储用户特定或应用特定的数据 [S99E58642]。Checkpointers 通过状态跟踪实现容错执行和人机协作工作流 [S4F78C9E4][SF47D87D6]。\n**实际结果**: Store 应被用于存储用户特定或应用特定的数据以确保长期记忆保留，而 Checkpointer 则更适合需要故障恢复、人工介入及状态追踪的场景。\n\n ### Sources:\n* [S99E58642] [PRIMARY] Persistence - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/persistence\n* [SF47D87D6] [PRIMARY] Memory - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/add-memory\n* [S4F78C9E4] [PRIMARY] Checkpointers - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/checkpointers"
+    },
+    {
+      "id": "langgraph_hitl",
+      "question": "解释 LangGraph Human-in-the-loop 的实现方式、适用场景和限制。",
+      "success": true,
+      "latency_seconds": 241.01,
+      "metrics": {
+        "citation_count": 3,
+        "malformed_citations": [],
+        "source_count": 3,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\n**问题**：如何实现 LangGraph 中的人机回环？\n**LangGraph 能力**：人机回环逻辑可以在工作流的任何点引入，提供灵活的集成点。[SF6D0F8A6] 其持久化执行状态利用图的状态保存机制（检查点），允许在特定节点暂停图形执行直到恢复。 [SF6D0F8A6][S7DD57631]\n**实际结果**：通过中断暂停和恢复机制，允许在特定节点进行人工干预，如批准 API 调用或修正输出，确保外部输入能控制流程继续。[SF6D0F8A6][S7DD57631]\n\n**问题**：LangGraph 人机回环的适用场景有哪些？\n**LangGraph 能力**：其低层原语提供创建完全可定制代理所需的灵活性，支持在生产环境中添加人机回环功能。[S04A206AC] 该机制支持多种常见模式，包括流式处理中的 HITL、批准或拒绝操作以及审查和编辑状态等多样化用例。 [SF6D0F8A6][S7DD57631]\n**实际结果**：开发者可以构建如工具中断验证人类输入、处理多个中断或在特定节点暂停等待外部输入的复杂代理工作流。[S7DD57631]\n\n**问题**：使用 LangGraph 中断机制有哪些限制？\n**LangGraph 能力**：定义了关于中断调用的具体规则以确保稳定性，例如不重新排序调用且避免返回复杂值。 [SF6D0F8A6][S7DD57631]\n**实际结果**：开发者不应将中断调用包裹在 try/except 中，不能在节点内重新排序中断调用，且需遵守这些规范以防止执行错误。[SF6D0F8A6][S7DD57631]\n\n ### Sources:\n* [SF6D0F8A6] [PRIMARY] Human-in-the-loop overview - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/human-in-the-loop\n* [S04A206AC] [PRIMARY] LangGraph: Agent Orchestration Framework for Reliable AI Agents : https://www.langchain.com/langgraph\n* [S7DD57631] [PRIMARY] Interrupts - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/interrupts"
+    },
+    {
+      "id": "multi_agent",
+      "question": "比较 supervisor、swarm 和 hierarchical 三种多智能体编排模式。",
+      "success": true,
+      "latency_seconds": 296.53,
+      "metrics": {
+        "citation_count": 3,
+        "malformed_citations": [],
+        "source_count": 3,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\n### Supervisor 模式场景\n**问题：** LangChain 中如何实现具有监督或路由功能的智能体编排？\n**LangGraph 能力：** LangGraph 作为底层编排框架，允许混合确定性步骤与 LLM 驱动的步骤以设计可靠处理复杂任务的代理 [S399CF636]。多智能体文档明确列出了 Router（路由器）和 Handoffs（交接）模式作为核心功能之一 [S3E205DC8]。\n**实际结果：** 这种架构支持混合使用模式，例如子代理可以调用工具来触发自定义工作流或路由智能体 [S3E205DC8]。\n\n### Swarm 模式场景\n**问题：** LangChain 如何支持多个对等智能体的协作？\n**LangGraph 能力：** Multi-agent 文档指出 Subagents（子代理）架构是核心功能之一，允许使用技能并调用工具来协调专门化组件 [S3E205DC8]。图 API 提供了定义行为的关键组件以管理这些交互和复杂工作流 [S0A2B7C9E]。\n**实际结果：** 智能体可以混合模式进行协作，例如子代理能够利用特定技能或触发其他工作流来完成复杂任务 [S3E205DC8]。\n\n### Hierarchical 模式场景\n**问题：** LangChain 如何构建层级化的多智能体结构？\n**LangGraph 能力：** Graph API（图 API）通过 StateGraph 等组件定义状态和节点行为，支持复杂的流程控制与子图功能 [S399CF636]。系统允许混合不同的编排模式以在子代理架构中实现更深层的自定义工作流或路由逻辑 [S3E205DC8]。\n**实际结果：** 利用 LangGraph 对长运行、有状态智能体的控制能力，可以在层级结构中实现深度定制和复杂流程管理 [S399CF636][S3E205DC8]。\n\n ### Sources:\n* [S3E205DC8] [PRIMARY] Multi-agent - Docs by LangChain : https://docs.langchain.com/oss/python/langchain/multi-agent\n* [S0A2B7C9E] [PRIMARY] Graph API overview - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/graph-api\n* [S399CF636] [PRIMARY] LangGraph overview - Docs by LangChain : https://docs.langchain.com/oss/python/langgraph/overview"
+    },
+    {
+      "id": "mcp",
+      "question": "解释 Model Context Protocol 的核心架构、工具调用流程和安全风险。",
+      "success": true,
+      "latency_seconds": 329.61,
+      "metrics": {
+        "citation_count": 4,
+        "malformed_citations": [],
+        "source_count": 4,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\nModel Context Protocol（MCP）是一个开源标准，旨在为 AI 应用程序连接外部系统提供统一方式 [S50A58B4F]。其核心架构涉及服务器、客户端参与者以及生命周期管理等概念，通过标准化接口使应用能够访问本地文件及数据库等工具 [S172E80D7][S50A58B4F]。MCP 类似于 USB-C 端口为电子设备提供的连接标准，允许 AI 模型如 Claude 或 ChatGPT 接入外部数据源和任务执行环境 [S50A58B4F]。\n\n在工具调用流程方面，AI 应用首先通过工具发现请求与响应来识别可用功能，随后发送执行请求以完成具体任务并接收相应的执行结果 [S172E80D7]。借助 MCP，Agent 可以访问 Google Calendar、Notion 等数据源实现个性化助手功能，或让 Claude Code 根据 Figma 设计生成 Web 应用 [S50A58B4F]。这一流程支持通知机制（如工具列表变更），确保客户端能实时感知服务器端的能力变化并执行相应操作 [S172E80D7]。\n\n关于安全风险与合规性，MCP 文档中明确列出了安全相关章节供开发者参考 [S50A58B4F][SB96C6656]。具体的漏洞报告需通过 GitHub Security Advisories 在受影响仓库中进行提交，并遵循相关的披露协调流程 [SAC6CAA58]。协议设计基于信任模型运作，明确了如 stdio transport trust boundary 等交互边界范围以保障安全性 [SB96C6656][SAC6CAA58]。此外，项目设有安全利益小组（Security Interest Group）来协调披露并维护安全性基础规范 [SAC6CAA58]。\n\n ### Sources:\n* [S50A58B4F] [PRIMARY] What is the Model Context Protocol (MCP)? - Model Context Protocol : https://modelcontextprotocol.io/\n* [S172E80D7] [PRIMARY] Architecture overview - Model Context Protocol : https://modelcontextprotocol.io/docs/learn/architecture\n* [S50A58B4F] [PRIMARY] What is the Model Context Protocol (MCP)? : https://modelcontextprotocol.io/\n* [SAC6CAA58] [PRIMARY] Security Policy - Model Context Protocol : https://modelcontextprotocol.io/community/security\n* [SB96C6656] [PRIMARY] modelcontextprotocol/SECURITY.md at main - GitHub : https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/SECURITY.md"
+    },
+    {
+      "id": "rag",
+      "question": "比较基础 RAG、Agentic RAG 和 Graph RAG 的架构差异与适用场景。",
+      "success": true,
+      "latency_seconds": 367.71,
+      "metrics": {
+        "citation_count": 5,
+        "malformed_citations": [],
+        "source_count": 5,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\n问题：大语言模型在处理特定或专有数据时面临上下文有限和知识静态的局限，需要检索增强生成（RAG）技术来补充推理时的外部知识库 [SD3262052][S3CA054EE]。基础 RAG 架构通过预定义的检索流程解决这一问题，即先获取相关文档再回答用户查询 [SD3262052]。\n\nLangGraph 能力：在标准或两步式 RAG（2-Step RAG）中，系统构建知识基座并执行检索管道，包括加载、分割文档及选择嵌入模型存储至向量库，随后将结果作为上下文发送给语言模型生成答案 [S93673B58][SD3262052]。\n\n实际结果：该架构适用于需要增强 LLM 回答以包含特定数据（如私有或近期数据）的场景，通过检索管道提供基于上下文的推理支持 [SD3262052]。\n\n问题：面对复杂任务时，基础 RAG 可能无法灵活决定何时及如何获取信息，因此需要结合代理式推理的 Agentic RAG 架构来优化交互过程。\nLangGraph 能力：Agentic RAG 允许由 LLM 驱动的代理在交互过程中逐步推理并自主决策检索时机与方式 [SD3262052]。将检索连接为智能体工具，可供给 LLM 作为上下文使用 [S3CA054EE]。Deep Agents（基于 LangChain）进一步提供了自定义检索工具、文件系统后端及子代理等原语以支持此类复杂应用 [S5E7A28E5]。\n实际结果：这种架构适用于需要分步推理和动态信息获取的复杂问答场景，能够结合技能引导式检索与评估标准来优化生成质量 [SD3262052][S5E7A28E5]。\n\n问题：在处理需要发现复杂数据关联或处理私有/未见数据集的任务时，需考虑基于图的检索增强生成（Graph RAG）架构及其与其他模式的差异 [SFB304ADA][S3CA054EE]。\nLangGraph 能力：Microsoft Research 引入的 GraphRAG 是一种图基方法，支持在私有或先前未见的数据集上进行问答；同时 LangChain 文档指出存在 Hybrid RAG 等架构选项供选择 [SFB304ADA][SD3262052]。\n实际结果：GraphRAG 工具可加速复杂数据发现并解决特定检索需求，结合不同架构（如两步式、代理式或混合模式）可满足多样化的应用流控制与编排要求 [SD3262052][SFB304ADA]。\n\n ### Sources:\n* [S5E7A28E5] [PRIMARY] RAG with Deep Agents - Docs by LangChain : https://docs.langchain.com/oss/python/deepagents/rag\n* [SD3262052] [PRIMARY] Retrieval - Docs by LangChain : https://docs.langchain.com/oss/python/langchain/retrieval\n* [S93673B58] [PRIMARY] Design and Develop a RAG Solution on Azure - Azure Architecture Center : https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-solution-design-and-evaluation-guide\n* [SFB304ADA] [PRIMARY] GraphRAG: New tool for complex data... - Microsoft Research : https://www.microsoft.com/en-us/research/blog/graphrag-new-tool-for-complex-data-discovery-now-on-github/\n* [S3CA054EE] [PRIMARY] Retrieval - Docs by LangChain : https://docs.langchain.com/oss/javascript/langchain/retrieval"
+    },
+    {
+      "id": "lora",
+      "question": "比较 LoRA 与 QLoRA 的训练方法、显存需求和适用场景。",
+      "success": true,
+      "latency_seconds": 347.77,
+      "metrics": {
+        "citation_count": 5,
+        "malformed_citations": [],
+        "source_count": 5,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\n**训练方法对比**\nLoRA 的核心机制是冻结预训练模型的权重，并在 Transformer 架构的每一层中注入可训练的秩分解矩阵（rank decomposition matrices），从而大幅减少下游任务的 trainable parameters [SCAE140A2]。QLoRA 在 LoRA 的基础上引入了量化技术，通过反向传播梯度将数据从冻结的、经过 4-bit 量化的预训练语言模型传递到 Low Rank Adapters (LoRA) 中 [S2E95EE3F]。为了进一步提升量化模型的初始化效果，LoftQ（LoRA-Fine-Tuning-Aware Quantization）作为一种新颖框架被提出，它同时执行大语言模型量化并寻找适合 LoRA 微调的低秩初始化方案 [SA599AF12]。此外，在 PEFT 库中默认设置下 LoRA 仅在注意力块的查询和值层添加可训练权重，而 QLoRA 则向 Transformer 模型的所有线性层添加可训练权重，从而提供与全量微调相等的性能表现 [S945FFAD4]。针对初始化策略的优化研究还引入了 IniLoRA 变体，该方案在基准测试中一致优于标准 LoRA，突显了高级初始化策略对参数高效微调潜力的重要性 [S5F533BDF]。\n\n**显存需求对比**\n与使用 Adam 优化器微调 GPT-3 175B 相比，LoRA 可以将可训练参数减少约 10,000 倍，并将 GPU 内存需求减少 3 倍 [SCAE140A2]。QLoRA 进一步优化了显存使用效率，通过引入 4-bit NormalFloat (NF4) 数据类型、双重量化（double quantization）以及分页优化器（paged optimizers），使得在单个 48GB GPU 上微调一个拥有 65B 参数的模型成为可能 [S2E95EE3F]。\n\n**适用场景与性能表现**\nLoRA 在执行任务质量上与全量微调相当或更优，且相比 Adapter 方法没有额外的推理延迟（inference latency），适用于 RoBERTa、DeBERTa、GPT-2 和 GPT-3 等模型 [SCAE140A2]。QLoRA 在保持与完整 16-bit 微调任务性能一致的同时，支持更广泛的模型规模训练，例如 LLaMA 和 T5 的 33B 及 65B 参数版本 [S2E95EE3F]。实验表明，使用 QLoRA 在小而高质量的数据集上进行微调也能达到最先进的结果（state-of-the-art），其生成的 Guanaco 模型在 Vicuna 基准测试中达到了 ChatGPT 性能水平的 99.3% [S2E95EE3F]。\n\n ### Sources:\n* [SCAE140A2] [PRIMARY] [2106.09685] LoRA: Low-Rank Adaptation of Large Language Models : https://arxiv.org/abs/2106.09685\n* [S2E95EE3F] [PRIMARY] [2305.14314] QLoRA: Efficient Finetuning of Quantized LLMs : https://arxiv.org/abs/2305.14314\n* [SA599AF12] [PRIMARY] LoftQ: LoRA-Fine-Tuning-Aware Quantization for Large : https://arxiv.org/pdf/2310.08659\n* [S5F533BDF] [PRIMARY] Optimizing Fine-Tuning through Advanced Initialization Strategies for... : https://arxiv.org/html/2510.03731\n* [S945FFAD4] [PRIMARY] LoRA : https://huggingface.co/docs/peft/v0.17.0/developer_guides/lora"
+    },
+    {
+      "id": "multimodal_eval",
+      "question": "总结多模态大模型常用评测维度、数据集和局限性。",
+      "success": true,
+      "latency_seconds": 331.89,
+      "metrics": {
+        "citation_count": 5,
+        "malformed_citations": [],
+        "source_count": 5,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\n多模态大模型（MLLM）的评测维度涵盖了感知、理解、认知与推理等核心能力，同时也包括生成与应用等多个方面。现有研究对数百个基准进行了综述，评估重点集中在感知与理解、认知与推理以及特定领域应用上 [S03EF783A]。针对社会经济、自然科学及医疗用途的具体场景也是重要的评测方向，旨在全面覆盖不同维度的能力需求 [SC74D58C3][SA02D8F26]。\n\n在数据集和基准方面，现有的 MLLM 评测体系被划分为通用与特定领域的专用基准两大类。例如，MME 评估基准涵盖了感知与认知能力，包含总共 14 个子任务；此外还有针对人类中心场景的 HumanSense 等综合基准 [S069C6EE9][SA8740B70]。面对模型日益增长的多样性与复杂性，传统的单一任务评估方法已不足够，需要更全面的框架来有效衡量其性能 [SC74D58C3][SA8740B70]。\n\n关于局限性及挑战，当前的 MLLM 评测仍需被视为推动领域发展的关键学科，以支持更具能力和可靠性的模型开发。现有的评估步骤和指标体系尚需系统性审查，以便为研究人员提供有价值的见解并促进多模态大模型的进一步发展 [S03EF783A]。此外，在推理能力方面，基于强化学习的训练范式通常缺乏对思考过程的有效监督，可能导致奖励黑客问题或次优策略的学习，这限制了模型泛化能力的提升 [SA8740B70]。\n\n ### Sources:\n* [SC74D58C3] [PRIMARY] A Survey on Evaluation of Multimodal Large Language Models : https://arxiv.org/abs/2408.15769\n* [SA02D8F26] [PRIMARY] A Survey on Evaluation of Multimodal Large Language Models : https://arxiv.org/html/2408.15769\n* [SA8740B70] [PRIMARY] Paper page - MME-Survey: A Comprehensive Survey on Evaluation of ... : https://huggingface.co/papers/2411.15296\n* [S03EF783A] [PRIMARY] [2408.08632] A Survey on Benchmarks of Multimodal Large ... : https://arxiv.org/abs/2408.08632\n* [S069C6EE9] [PRIMARY] A Survey on Multimodal Benchmarks: In the Era of Large AI ModelsA Survey on Benchmarks of Multimodal Large Language Models[2306.13394] MME: A Comprehensive Evaluation Benchmark for ...Survey of Large Multimodal Model Datasets, Application ...[2408.15769] A Survey on Evaluation of Multimodal Large ...MME: A Comprehensive Evaluation Benchmark for Multimodal ... : https://arxiv.org/abs/2409.18142"
+    },
+    {
+      "id": "vllm",
+      "question": "解释 vLLM 的 PagedAttention、连续批处理和推理加速原理。",
+      "success": true,
+      "latency_seconds": 404.02,
+      "metrics": {
+        "citation_count": 4,
+        "malformed_citations": [],
+        "source_count": 4,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\nvLLM is a high-throughput and memory-efficient inference and serving engine for LLMs, featuring state-of-the-art serving throughput achieved through PagedAttention's efficient management of attention key and value memory [SE8BA7172][SB9174393]. The system optimizes request processing using continuous batching, chunked prefill, and prefix caching to maintain high throughput while managing GPU memory resources effectively [SE8BA7172].\n\nRegarding the implementation of PagedAttention, vLLM provides documentation offering a high-level explanation of its multi-head query attention kernel for users seeking technical details [S81D24895]. Currently, vLLM utilizes its own implementation of this kernel (csrc/attention/attention_kernels.cu), which is designed to be compatible with paged KV caches where key and value cache are stored in separate blocks [S619C9159]. This memory management approach is central to the efficiency gains provided by PagedAttention [SB9174393].\n\n ### Sources:\n* [S81D24895] [PRIMARY] vLLM Paged Attention — vLLM : https://docs.vllm.ai/en/v0.6.3/dev/kernel/paged_attention.html\n* [SE8BA7172] [PRIMARY] GitHub - vllm-project/vllm: A high-throughput and memory-efficient ... : https://github.com/vllm-project/vllm\n* [SB9174393] [PRIMARY] vLLM : https://docs.vllm.ai/\n* [S619C9159] [PRIMARY] Paged Attention - vLLM : https://docs.vllm.ai/en/latest/design/paged_attention/\n* [SE8BA7172] [PRIMARY] GitHub - vllm-project/vllm: A high-throughput and memory-efficient... : https://github.com/vllm-project/vllm"
+    },
+    {
+      "id": "agent_evaluation",
+      "question": "如何评测 AI Agent 的任务完成率、工具调用、事实准确性和成本？",
+      "success": true,
+      "latency_seconds": 270.12,
+      "metrics": {
+        "citation_count": 6,
+        "malformed_citations": [],
+        "source_count": 6,
+        "citation_validity": 1.0,
+        "source_utilization": 1.0,
+        "primary_source_ratio": 1.0,
+        "invalid_citations": [],
+        "unused_sources": []
+      },
+      "report": "## Summary\n**问题**: 如何评测 AI Agent 的任务完成率与工具调用？\n**LangGraph 能力**: LangSmith 支持对图（graph）和节点进行评估，可定义目标函数来测试代理轨迹及中间步骤 [S10A0FBBA]。离线评估类型可在预部署阶段使用包含参考输出的精选数据集进行测试 [SFDE9DFB8]。\n**实际结果**: 通过确定性匹配或 LLM-as-judge 验证执行序列与工具调用，确保在开发阶段即可基于 curated datasets 确认任务完成情况及准确性 [SE304A084][S10A0FBBA]。\n\n**问题**: 如何评测 AI Agent 的事实准确性？\n**LangGraph 能力**: 支持自定义的 LLM-as-judge 评估器可定义评分标准提示词（rubric prompts），以衡量业务特定需求而非通用指标 [S0910E04E]。\n**实际结果**: 利用结构化反馈与推理对代理输出进行评分，确保内容符合领域准确性、语气适当性及 PII 保护等具体标准，避免仅依赖 BLEU 或 ROUGE 等通用基准 [S0910E04E]。\n\n**问题**: 如何管理评测成本与生产部署？\n**LangGraph 能力**: LangSmith 平台支持从开发到持续改进的评估生命周期，包括将生产轨迹连接至数据集以驱动质量提升 [SFDE9DFB8][S0910E04E]。通过 Engine 可自主改善代理性能并实现大规模部署 [S2CE72577][S43E98C38]。\n**实际结果**: 在 LangSmith Studio 中运行实验与观察，利用真实用户交互数据建立持续改进循环，从而在保证生产环境可靠性的同时优化评估成本与迭代效率 [SFDE9DFB8][S0910E04E]。\n\n ### Sources:\n* [SE304A084] [PRIMARY] Agent Evals - Docs by LangChain : https://docs.langchain.com/oss/python/langchain/test/evals\n* [S2CE72577] [PRIMARY] Home - Docs by LangChain : https://docs.langchain.com/\n* [S43E98C38] [PRIMARY] LangChain: Observe, Evaluate, and Deploy Reliable AI Agents : https://www.langchain.com/\n* [SFDE9DFB8] [PRIMARY] Evaluation concepts - Docs by LangChain : https://docs.langchain.com/langsmith/evaluation-concepts\n* [S10A0FBBA] [PRIMARY] How to evaluate a graph - Docs by LangChain : https://docs.langchain.com/langsmith/evaluate-graph\n* [S0910E04E] [PRIMARY] LLM Evaluation Metrics: Measuring What Matters for Your Users : https://www.langchain.com/resources/llm-evaluation-metrics"
+    }
+  ]
+}

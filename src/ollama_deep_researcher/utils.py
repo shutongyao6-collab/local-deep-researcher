@@ -1,18 +1,111 @@
 import os
 import httpx
 import requests
+import hashlib
 from typing import Dict, Any, List, Union, Optional
-
+from urllib.parse import urlparse
 from markdownify import markdownify
 from langsmith import traceable
 from tavily import TavilyClient
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 from langchain_community.utilities import SearxSearchWrapper
+def get_preferred_sources() -> List[str]:
+    return [
+        item.strip().lower()
+        for item in os.getenv("PREFERRED_SOURCES", "").split(",")
+        if item.strip()
+    ]
 
+
+def get_source_authority(url: str) -> str:
+    url = url.lower()
+
+    community_paths = (
+        "/issues/",
+        "/discussions/",
+        "/pull/",
+    )
+
+    if any(path in url for path in community_paths):
+        return "COMMUNITY"
+
+    if any(item in url for item in get_preferred_sources()):
+        return "PRIMARY"
+
+    return "SECONDARY"
+
+def rank_search_results(
+    search_results: Dict[str, Any],
+    max_results: int = 3,
+) -> Dict[str, Any]:
+    """Rank sources by authority and content availability."""
+
+    weak_domains = {
+        "medium.com",
+        "zhihu.com",
+        "substack.com",
+        "latenode.com",
+    }
+
+    candidates = []
+
+    for original_source in search_results.get("results", []):
+        source = dict(original_source)
+        source["authority"] = get_source_authority(source.get("url", ""))
+        candidates.append(source)
+
+    def score(source: Dict[str, Any]) -> int:
+        hostname = urlparse(source.get("url", "")).hostname or ""
+        quality_score = 0
+        if source["authority"] == "COMMUNITY":
+            quality_score -= 40
+
+        preferred_language = os.getenv(
+            "PREFERRED_LANGUAGE", "python"
+        ).lower()
+
+        if f"/{preferred_language}/" in source.get("url", "").lower():
+            quality_score += 30
+
+        if (
+                preferred_language == "python"
+                and "/javascript/" in source.get("url", "").lower()
+        ):
+            quality_score -= 30
+        if source["authority"] == "PRIMARY":
+            quality_score += 100
+
+        if (
+            hostname.endswith(".edu")
+            or hostname.endswith(".gov")
+            or hostname in {"arxiv.org", "acm.org", "ieee.org"}
+        ):
+            quality_score += 60
+
+        if source.get("raw_content"):
+            quality_score += 20
+
+        if any(
+            hostname == domain or hostname.endswith("." + domain)
+            for domain in weak_domains
+        ):
+            quality_score -= 30
+
+        if not source.get("content"):
+            quality_score -= 100
+
+        return quality_score
+
+    ranked = sorted(candidates, key=score, reverse=True)
+
+    return {"results": ranked[:max_results]}
 # Constants
 CHARS_PER_TOKEN = 4
-
+def get_source_id(url: str) -> str:
+    """Generate a stable source ID from its URL."""
+    digest = hashlib.sha256(url.encode("utf-8")).hexdigest()[:8].upper()
+    return f"S{digest}"
 
 def get_config_value(value: Any) -> str:
     """
@@ -99,7 +192,14 @@ def deduplicate_and_format_sources(
 
     # Format output
     formatted_text = "Sources:\n\n"
-    for i, source in enumerate(unique_sources.values(), 1):
+    for source in unique_sources.values():
+        source_id = get_source_id(source["url"])
+        formatted_text += f"Source ID: [{source_id}]\n===\n"
+        authority = source.get(
+            "authority",
+            get_source_authority(source["url"]),
+        )
+        formatted_text += f"Authority: {authority}\n===\n"
         formatted_text += f"Source: {source['title']}\n===\n"
         formatted_text += f"URL: {source['url']}\n===\n"
         formatted_text += (
@@ -134,7 +234,10 @@ def format_sources(search_results: Dict[str, Any]) -> str:
         str: Formatted string with sources as bullet points in the format "* title : url"
     """
     return "\n".join(
-        f"* {source['title']} : {source['url']}" for source in search_results["results"]
+        f"* [{get_source_id(source['url'])}] "
+        f"[{source.get('authority', get_source_authority(source['url']))}] "
+        f"{source['title']} : {source['url']}"
+        for source in search_results["results"]
     )
 
 
@@ -153,7 +256,10 @@ def fetch_raw_content(url: str) -> Optional[str]:
     """
     try:
         # Create a client with reasonable timeout
-        with httpx.Client(timeout=10.0) as client:
+        with httpx.Client(
+                timeout=10.0,
+                follow_redirects=True,
+        ) as client:
             response = client.get(url)
             response.raise_for_status()
             return markdownify(response.text)
@@ -161,63 +267,79 @@ def fetch_raw_content(url: str) -> Optional[str]:
         print(f"Warning: Failed to fetch full page content for {url}: {str(e)}")
         return None
 
-
 @traceable
 def duckduckgo_search(
-    query: str, max_results: int = 3, fetch_full_page: bool = False
+    query: str,
+    max_results: int = 6,
+    fetch_full_page: bool = False,
 ) -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Search the web using DuckDuckGo and return formatted results.
+    """Run preferred-site searches plus a general web search."""
 
-    Uses the DDGS library to perform web searches through DuckDuckGo.
-
-    Args:
-        query (str): The search query to execute
-        max_results (int, optional): Maximum number of results to return. Defaults to 3.
-        fetch_full_page (bool, optional): Whether to fetch full page content from result URLs.
-                                         Defaults to False.
-    Returns:
-        Dict[str, List[Dict[str, Any]]]: Search response containing:
-            - results (list): List of search result dictionaries, each containing:
-                - title (str): Title of the search result
-                - url (str): URL of the search result
-                - content (str): Snippet/summary of the content
-                - raw_content (str or None): Full page content if fetch_full_page is True,
-                                            otherwise same as content
-    """
     try:
+        preferred_sources = get_preferred_sources()
+        raw_results = []
+
         with DDGS() as ddgs:
-            results = []
-            search_results = list(ddgs.text(query, max_results=max_results))
+            # Search configured primary sources explicitly
+            for preferred_source in preferred_sources:
+                official_query = f"site:{preferred_source} {query}"
 
-            for r in search_results:
-                url = r.get("href")
-                title = r.get("title")
-                content = r.get("body")
+                try:
+                    raw_results.extend(
+                        list(ddgs.text(official_query, max_results=2))
+                    )
+                except Exception as error:
+                    print(
+                        f"Warning: Preferred source search failed "
+                        f"for {preferred_source}: {error}"
+                    )
 
-                if not all([url, title, content]):
-                    print(f"Warning: Incomplete result from DuckDuckGo: {r}")
-                    continue
+            # General web search
+            try:
+                raw_results.extend(
+                    list(ddgs.text(query, max_results=max_results))
+                )
+            except Exception as error:
+                print(f"Warning: General search failed: {error}")
 
-                raw_content = content
-                if fetch_full_page:
-                    raw_content = fetch_raw_content(url)
+        # Deduplicate before downloading pages
+        unique_results = {}
 
-                # Add result to list
-                result = {
-                    "title": title,
-                    "url": url,
-                    "content": content,
-                    "raw_content": raw_content,
-                }
-                results.append(result)
+        for result in raw_results:
+            url = result.get("href")
 
-            return {"results": results}
-    except Exception as e:
-        print(f"Error in DuckDuckGo search: {str(e)}")
-        print(f"Full error details: {type(e).__name__}")
+            if url and url not in unique_results:
+                unique_results[url] = result
+
+        selected_results = list(unique_results.values())[:max_results]
+        results = []
+
+        for result in selected_results:
+            url = result.get("href")
+            title = result.get("title")
+            content = result.get("body")
+
+            if not all([url, title, content]):
+                continue
+
+            raw_content = content
+
+            if fetch_full_page:
+                raw_content = fetch_raw_content(url)
+
+            results.append({
+                "title": title,
+                "url": url,
+                "content": content,
+                "raw_content": raw_content,
+                "authority": get_source_authority(url),
+            })
+
+        return {"results": results}
+
+    except Exception as error:
+        print(f"Error in DuckDuckGo search: {error}")
         return {"results": []}
-
 
 @traceable
 def searxng_search(

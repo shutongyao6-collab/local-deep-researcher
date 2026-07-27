@@ -1,0 +1,169 @@
+[
+  {
+    "id": "langgraph_overview",
+    "question": "说明 LangGraph 在 AI Agent 开发中的核心作用，并给出三个不同的应用场景。",
+    "preferred_sources": "docs.langchain.com/oss/python/langgraph,langchain.com/langgraph,github.com/langchain-ai/langgraph"
+  },
+  {
+    "id": "langgraph_memory",
+    "question": "比较 LangGraph 中 Checkpointer 与 Store 的作用、作用域和典型使用场景。",
+    "preferred_sources": "docs.langchain.com/oss/python/langgraph,langchain.com/langgraph,github.com/langchain-ai/langgraph"
+  },
+  {
+    "id": "langgraph_hitl",
+    "question": "解释 LangGraph Human-in-the-loop 的实现方式、适用场景和限制。",
+    "preferred_sources": "docs.langchain.com/oss/python/langgraph,langchain.com/langgraph,github.com/langchain-ai/langgraph"
+  },
+  {
+    "id": "multi_agent",
+    "question": "比较 supervisor、swarm 和 hierarchical 三种多智能体编排模式。",
+    "preferred_sources": "docs.langchain.com,langchain.com,github.com/langchain-ai"
+  },
+  {
+    "id": "rag",
+    "question": "比较基础 RAG、Agentic RAG 和 Graph RAG 的架构差异与适用场景。",
+    "preferred_sources": "docs.langchain.com,microsoft.com,github.com/microsoft"
+  },
+  {
+    "id": "lora",
+    "question": "比较 LoRA 与 QLoRA 的训练方法、显存需求和适用场景。",
+    "preferred_sources": "arxiv.org,huggingface.co"
+  },
+  {
+    "id": "multimodal_eval",
+    "question": "总结多模态大模型常用评测维度、数据集和局限性。",
+    "preferred_sources": "arxiv.org,huggingface.co"
+  },
+  {
+  "id": "vllm",
+  "question": "解释 vLLM 的 PagedAttention、连续批处理和推理加速原理。",
+  "preferred_sources": "docs.vllm.ai,github.com/vllm-project,arxiv.org",
+  "expected_concepts": [
+    {
+      "name": "PagedAttention",
+      "aliases": ["pagedattention"]
+    },
+    {
+      "name": "KV Cache",
+      "aliases": ["kv cache", "kv缓存", "kv 缓存"]
+    },
+    {
+      "name": "Block-based Memory",
+      "aliases": [
+        "内存块",
+        "固定大小的块",
+        "block-based",
+        "memory block"
+      ]
+    },
+    {
+      "name": "Continuous Batching",
+      "aliases": [
+        "continuous batching",
+        "连续批处理"
+      ]
+    },
+    {
+      "name": "Memory Fragmentation",
+      "aliases": [
+        "memory fragmentation",
+        "内存碎片",
+        "显存碎片",
+        "碎片化"
+  ]
+},
+    {
+      "name": "Scheduling",
+      "aliases": [
+        "迭代级调度",
+        "请求调度",
+        "动态调度",
+        "scheduler"
+      ]
+    },
+    {
+      "name": "Throughput",
+      "aliases": [
+        "throughput",
+        "吞吐量"
+      ]
+    },
+    {
+      "name": "Latency",
+      "aliases": [
+        "latency",
+        "延迟"
+      ]
+    }
+  ]
+},
+  {
+    "id": "agent_evaluation",
+    "question": "如何评测 AI Agent 的任务完成率、工具调用、事实准确性和成本？",
+    "preferred_sources": "docs.langchain.com,langchain.com,arxiv.org"
+  },
+  {
+    "id": "mcp",
+    "question": "解释 Model Context Protocol 的核心架构、工具调用流程和安全风险。",
+    "preferred_sources": "modelcontextprotocol.io,github.com/modelcontextprotocol",
+    "expected_concepts": [
+      {
+        "name": "Host",
+        "aliases": [
+          "host",
+          "主机"
+        ]
+      },
+      {
+        "name": "Client",
+        "aliases": [
+          "client",
+          "客户端"
+        ]
+      },
+      {
+        "name": "Server",
+        "aliases": [
+          "server",
+          "服务器"
+        ]
+      },
+      {
+        "name": "tools/list",
+        "aliases": ["tools/list"]
+      },
+      {
+        "name": "tools/call",
+        "aliases": ["tools/call"]
+      },
+      {
+        "name": "stdio",
+        "aliases": [
+          "stdio",
+          "标准输入输出"
+        ]
+      },
+      {
+        "name": "OAuth",
+        "aliases": [
+          "oauth"
+        ]
+      },
+      {
+        "name": "SSRF",
+        "aliases": [
+          "ssrf",
+          "服务端请求伪造"
+        ]
+      },
+      {
+        "name": "Prompt Injection",
+        "aliases": [
+          "prompt injection",
+          "提示词注入",
+          "提示注入"
+        ]
+      }
+    ]
+  }
+]
